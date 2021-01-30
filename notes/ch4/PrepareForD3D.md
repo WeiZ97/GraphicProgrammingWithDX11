@@ -1,11 +1,11 @@
 # 準備工作
 
 
-* [Direct3D](Driect3D)
-* [COM組件](COM)
-* [紋理與數據資源格式](Texture-data-format)
-* [交換鏈與頁面翻轉](swap-chain-and-page-flipping)
-* [深度緩衝區](depth-buffer)
+* [Direct3D](#Driect3D)
+* [COM組件](#COM)
+* [紋理與數據資源格式](#Texture-data-format)
+* [交換鏈與頁面翻轉](#swap-chain-and-page-flipping)
+* [深度緩衝區](#depth-buffer)
 
 <h2 id="Driect3D">Direct3D</h2>
 
