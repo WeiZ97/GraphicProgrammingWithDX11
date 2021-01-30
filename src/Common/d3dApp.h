@@ -39,7 +39,6 @@ protected:
     HINSTANCE   mhAppInst;
     HWND        mhMainWnd;
     bool        mAppPaused;
-    bool        mAppPaused;
 	bool        mMinimized;
 	bool        mMaximized;
 	bool        mResizing; 

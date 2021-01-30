@@ -12,17 +12,32 @@ if(MSVC)
         $<$<CONFIG:Release>:/MT> #--|
     )
 
+    add_definitions(-DUNICODE -D_UNICODE)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
 
 endif()
 
+
+find_library(D3D11_LIB d3d11.lib PATHS "$ENV{D3D_DIR}")
+
 ##############Common################
+
 
 file(GLOB COMMON_SOURCES "${PROJECT_SOURCE_DIR}/src/Common/*.cpp")
 
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/src/Common")
 
 add_library(Common ${COMMON_SOURCES})
+target_link_libraries(Common "${D3D11_LIB}")
 
+
+####################################
+
+##############Ch4/InitDriect3D######
+
+file(GLOB InitDX3DSOURCES "${PROJECT_SOURCE_DIR}/src/Ch4/InitDriect3D/*.cpp")
+
+add_executable(InitDX3D ${InitDX3DSOURCES})
+target_link_libraries(InitDX3D Common)
 
 ####################################
