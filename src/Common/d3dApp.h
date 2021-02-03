@@ -58,6 +58,7 @@ protected:
     ID3D11RenderTargetView* mRenderTargetView;
     //深度緩衝視圖
     ID3D11DepthStencilView* mDepthStencilView;
+    
     //渲染的範圍
     D3D11_VIEWPORT mScreenViewport;
 
