@@ -3,6 +3,8 @@
 #include "d3dUtil.h"
 #include "GameTimer.h"
 #include <string>
+#include <wrl/client.h>
+#include <d3d11_1.h>
 
 class D3DApp
 {
@@ -46,18 +48,26 @@ protected:
 
     GameTimer mTimer;
 
+    template<class T>
+    using Comptr=Microsoft::WRL::ComPtr<T>;
+
     //檢測顯示卡狀態功能與分配資源
-    ID3D11Device* md3dDevice;
+    Comptr<ID3D11Device> md3dDevice;
     // device使用環境以及設定，設置渲染管線模式以及生成device的渲染命令
-    ID3D11DeviceContext* md3dImmediateContext;
+    Comptr<ID3D11DeviceContext> md3dImmediateContext;
     // 後臺以及前台緩衝區的交換鍊
-    IDXGISwapChain* mSwapChain;
+    Comptr<IDXGISwapChain> mSwapChain;
+
+    Comptr<ID3D11Device1> md3dDevice1;
+    Comptr<ID3D11DeviceContext1> md3dImmediateContext1;
+    Comptr<IDXGISwapChain1> mSwapChain1;
+ 
     // 深度緩衝區
-    ID3D11Texture2D* mDepthStencilBuffer;
+    Comptr<ID3D11Texture2D> mDepthStencilBuffer;
     //渲染目標視圖 ps:視圖，在不同渲染管線下 同一資源有不同使用方式...
-    ID3D11RenderTargetView* mRenderTargetView;
+    Comptr<ID3D11RenderTargetView> mRenderTargetView;
     //深度緩衝視圖
-    ID3D11DepthStencilView* mDepthStencilView;
+    Comptr<ID3D11DepthStencilView> mDepthStencilView;
     
     //渲染的範圍
     D3D11_VIEWPORT mScreenViewport;

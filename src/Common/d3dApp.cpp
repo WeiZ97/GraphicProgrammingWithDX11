@@ -26,12 +26,12 @@ D3DApp::D3DApp(HINSTANCE hInstance)
 	mResizing(false),
 	m4xMsaaQuality(0),
  
-	md3dDevice(0),
-	md3dImmediateContext(0),
-	mSwapChain(0),
-	mDepthStencilBuffer(0),
-	mRenderTargetView(0),
-	mDepthStencilView(0)
+	md3dDevice(nullptr),
+	md3dImmediateContext(nullptr),
+	mSwapChain(nullptr),
+	mDepthStencilBuffer(nullptr),
+	mRenderTargetView(nullptr),
+	mDepthStencilView(nullptr)
 {
 	ZeroMemory(&mScreenViewport, sizeof(D3D11_VIEWPORT));
 
@@ -43,16 +43,8 @@ D3DApp::D3DApp(HINSTANCE hInstance)
 
 D3DApp::~D3DApp()
 {
-    ReleaseCOM(mRenderTargetView);
-    ReleaseCOM(mDepthStencilView);
-    ReleaseCOM(mSwapChain);
-    ReleaseCOM(mDepthStencilBuffer);
-
-    if(md3dImmediateContext)
-        md3dImmediateContext->ClearState();
-    
-    ReleaseCOM(md3dImmediateContext);
-    ReleaseCOM(md3dDevice);
+    if(this->md3dImmediateContext)
+		md3dImmediateContext->ClearState();
 }
 HINSTANCE D3DApp::AppInst()const
 {
@@ -115,58 +107,66 @@ bool D3DApp::Init()
 void D3DApp::OnResize()
 {
     assert(md3dImmediateContext);
-    assert(md3dDevice);
-    assert(mSwapChain);
+	assert(md3dDevice);
+	assert(mSwapChain);
 
-    ReleaseCOM(mRenderTargetView);
-    ReleaseCOM(mDepthStencilView);
-    ReleaseCOM(mDepthStencilBuffer);
-
-    HR(mSwapChain->ResizeBuffers(1, mClientWidth, mClientHeight, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
-	ID3D11Texture2D* backBuffer;
-	HR(mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer)));
-	HR(md3dDevice->CreateRenderTargetView(backBuffer, 0, &mRenderTargetView));
-	ReleaseCOM(backBuffer);
-
-    D3D11_TEXTURE2D_DESC depthStencilDesc;
-
-    depthStencilDesc.Width     = mClientWidth;
-	depthStencilDesc.Height    = mClientHeight;
-	depthStencilDesc.MipLevels = 1;
-	depthStencilDesc.ArraySize = 1;
-	depthStencilDesc.Format    = DXGI_FORMAT_D24_UNORM_S8_UINT;
-
-    if( mEnable4xMsaa )
+	if(md3dDevice1!=nullptr)
 	{
-		depthStencilDesc.SampleDesc.Count   = 4;
-		depthStencilDesc.SampleDesc.Quality = m4xMsaaQuality-1;
+		assert(md3dImmediateContext1);
+		assert(md3dDevice1);
+		assert(mSwapChain1);
 	}
-	// No MSAA
+
+	mRenderTargetView.Reset();
+	mDepthStencilView.Reset();
+	mDepthStencilBuffer.Reset();
+
+	//創建渲染目標視圖
+	Comptr<ID3D11Texture2D> backBuffer;
+	HR(mSwapChain->ResizeBuffers(1,mClientWidth,mClientHeight,DXGI_FORMAT_R8G8B8A8_UNORM,0));
+	HR(mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backBuffer.GetAddressOf())));
+	HR(md3dDevice->CreateRenderTargetView(backBuffer.Get(),nullptr,mRenderTargetView.GetAddressOf()));
+	//D3D11SetDebugObjectName(backBuffer.Get(), "BackBuffer[0]");
+	backBuffer.Reset();
+	///////
+
+	
+	D3D11_TEXTURE2D_DESC depthStencilDesc;
+
+	depthStencilDesc.Width=mClientWidth;
+	depthStencilDesc.Height=mClientHeight;
+	depthStencilDesc.MipLevels=1;
+	depthStencilDesc.ArraySize=1;
+	depthStencilDesc.Format=DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+	if (mEnable4xMsaa)
+	{
+		depthStencilDesc.SampleDesc.Count = 4;
+		depthStencilDesc.SampleDesc.Quality = m4xMsaaQuality - 1;
+	}
 	else
 	{
-		depthStencilDesc.SampleDesc.Count   = 1;
+		depthStencilDesc.SampleDesc.Count = 1;
 		depthStencilDesc.SampleDesc.Quality = 0;
 	}
+	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	depthStencilDesc.CPUAccessFlags = 0;
+	depthStencilDesc.MiscFlags = 0;
 
-    
-	depthStencilDesc.Usage          = D3D11_USAGE_DEFAULT;
-	depthStencilDesc.BindFlags      = D3D11_BIND_DEPTH_STENCIL;
-	depthStencilDesc.CPUAccessFlags = 0; 
-	depthStencilDesc.MiscFlags      = 0;
+	HR(md3dDevice->CreateTexture2D(&depthStencilDesc,nullptr,mDepthStencilBuffer.GetAddressOf()));
+	HR(md3dDevice->CreateDepthStencilView(mDepthStencilBuffer.Get(),nullptr,mDepthStencilView.GetAddressOf()));
 
-    HR(md3dDevice->CreateTexture2D(&depthStencilDesc, 0, &mDepthStencilBuffer));
-	HR(md3dDevice->CreateDepthStencilView(mDepthStencilBuffer, 0, &mDepthStencilView));
+	md3dImmediateContext->OMSetRenderTargets(1,mRenderTargetView.GetAddressOf(),mDepthStencilView.Get());
 
-    md3dImmediateContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
+	mScreenViewport.TopLeftX = 0;
+	mScreenViewport.TopLeftY = 0;
+	mScreenViewport.Width    = static_cast<float>(mClientWidth);
+	mScreenViewport.Height   = static_cast<float>(mClientHeight);
+	mScreenViewport.MinDepth = 0.0f;
+	mScreenViewport.MaxDepth = 1.0f;
 
-    mScreenViewport.TopLeftX=0;
-    mScreenViewport.TopLeftY=0;
-    mScreenViewport.Width=static_cast<float>(mClientWidth);
-    mScreenViewport.Height=static_cast<float>(mClientHeight);
-    mScreenViewport.MinDepth=0.0f;
-    mScreenViewport.MaxDepth=1.0f;
-
-    md3dImmediateContext->RSSetViewports(1,&mScreenViewport);
+	md3dImmediateContext->RSSetViewports(1, &mScreenViewport);
 }
 
 LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -337,84 +337,140 @@ bool D3DApp::InitMainWindow()
 
 bool D3DApp::InitDirect3D()
 {
-    INT createDeviceFlags = 0;
-#if defined(DEBUG) || defined(_DEBUG)  
-    createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
-#endif
+    HRESULT hr=S_OK;
 
-    D3D_FEATURE_LEVEL featureLevel;
-    HRESULT hr=D3D11CreateDevice(
-                0,
-                md3dDriverType,
-                0,
-                createDeviceFlags,
-                0,0,
-                D3D11_SDK_VERSION,
-                &md3dDevice,
-                &featureLevel,
-                &md3dImmediateContext);
-    
-    if( FAILED(hr) )
+	UINT createDeviceFlags=0;
+	#if defined(DEBUG) || defined(_DEBUG)  
+		createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+	#endif
+
+	D3D_DRIVER_TYPE driverTypes[]=
 	{
-		MessageBox(0, L"D3D11CreateDevice Failed.", 0, 0);
+		D3D_DRIVER_TYPE::D3D_DRIVER_TYPE_HARDWARE,
+		D3D_DRIVER_TYPE::D3D_DRIVER_TYPE_WARP,
+		D3D_DRIVER_TYPE::D3D_DRIVER_TYPE_REFERENCE,
+	};
+	UINT numDriverTypes=ARRAYSIZE(driverTypes);
+
+	D3D_FEATURE_LEVEL  featureLevels[]=
+	{
+		D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_1,
+		D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_0
+	};
+
+	UINT numFeatureLevels = ARRAYSIZE(featureLevels);
+
+	D3D_FEATURE_LEVEL featureLevel;
+	D3D_DRIVER_TYPE d3dDriverType;
+	for(UINT driverTypeIndex=0;driverTypeIndex<numDriverTypes;driverTypeIndex++)
+	{
+		d3dDriverType=driverTypes[driverTypeIndex];
+		hr = D3D11CreateDevice(nullptr, d3dDriverType, nullptr, createDeviceFlags, featureLevels, numFeatureLevels,
+			D3D11_SDK_VERSION, md3dDevice.GetAddressOf(), &featureLevel, md3dImmediateContext.GetAddressOf());
+
+		if(hr==E_INVALIDARG)
+		{
+			hr=D3D11CreateDevice(nullptr, d3dDriverType, nullptr, createDeviceFlags, &featureLevels[1], numFeatureLevels-1,
+				D3D11_SDK_VERSION, md3dDevice.GetAddressOf(), &featureLevel, md3dImmediateContext.GetAddressOf());
+		}
+		if(SUCCEEDED(hr))
+			break;
+	}
+	if(FAILED(hr))
+	{
+		MessageBox(0,L"D3D11CreateDevice Failed.",0,0);
 		return false;
 	}
-
-	if( featureLevel != D3D_FEATURE_LEVEL_11_0 )
+	if(featureLevel != D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_0 && featureLevel!=D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_1)
 	{
-		MessageBox(0, L"Direct3D Feature Level 11 unsupported.", 0, 0);
+		MessageBox(0,L"Feature Level 11 unsupported",0,0);
 		return false;
 	}
+	md3dDevice->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM,4,&m4xMsaaQuality);
+	assert(m4xMsaaQuality>0);
 
-    HR(md3dDevice->CheckMultisampleQualityLevels(
-		DXGI_FORMAT_R8G8B8A8_UNORM, 4, &m4xMsaaQuality));
-	assert( m4xMsaaQuality > 0 );
+	Comptr<IDXGIDevice> dxgiDevice=nullptr;
+	Comptr<IDXGIAdapter> dxgiAdapter=nullptr;
+	Comptr<IDXGIFactory1> dxgiFactory1=nullptr;
+	Comptr<IDXGIFactory2> dxgiFactory2=nullptr;
+	
 
-    DXGI_SWAP_CHAIN_DESC sd;
-    sd.BufferDesc.Width=mClientWidth;
-    sd.BufferDesc.Height=mClientHeight;
-    sd.BufferDesc.RefreshRate.Numerator=60;
-    sd.BufferDesc.RefreshRate.Denominator=1;
-    sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-	sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+	HR(md3dDevice.As(&dxgiDevice));
+	HR(dxgiDevice->GetAdapter(dxgiAdapter.GetAddressOf()));
+	HR(dxgiAdapter->GetParent(__uuidof(IDXGIFactory1),reinterpret_cast<void**>(dxgiFactory1.GetAddressOf())));
 
-    if( mEnable4xMsaa )
+	hr=dxgiFactory1.As(&dxgiFactory2);
+
+	if(dxgiFactory2 !=nullptr)
 	{
-		sd.SampleDesc.Count   = 4;
-		sd.SampleDesc.Quality = m4xMsaaQuality-1;
+		HR(md3dDevice.As(&md3dDevice1));
+		HR(md3dImmediateContext.As(&md3dImmediateContext1));
+
+		DXGI_SWAP_CHAIN_DESC1 sd;
+		ZeroMemory(&sd, sizeof(sd));
+		sd.Width = mClientWidth;
+		sd.Height = mClientHeight;
+		sd.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		if (mEnable4xMsaa)
+		{
+			sd.SampleDesc.Count = 4;
+			sd.SampleDesc.Quality = m4xMsaaQuality - 1;
+			
+		}
+		else
+		{
+			sd.SampleDesc.Count = 1;
+			sd.SampleDesc.Quality = 0;
+		}
+		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		sd.BufferCount = 1;
+		sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+		sd.Flags = 0;
+
+		DXGI_SWAP_CHAIN_FULLSCREEN_DESC fd;
+		fd.RefreshRate.Numerator = 60;
+		fd.RefreshRate.Denominator = 1;
+		fd.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+		fd.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+		fd.Windowed = TRUE;
+		// 視窗創建交換鏈
+		HR(dxgiFactory2->CreateSwapChainForHwnd(md3dDevice.Get(), mhMainWnd, &sd, &fd, nullptr, mSwapChain1.GetAddressOf()));
+		HR(mSwapChain1.As(&mSwapChain));
 	}
-	// No MSAA
 	else
 	{
-		sd.SampleDesc.Count   = 1;
-		sd.SampleDesc.Quality = 0;
+		DXGI_SWAP_CHAIN_DESC sd;
+		ZeroMemory(&sd, sizeof(sd));
+		sd.BufferDesc.Width = mClientWidth;
+		sd.BufferDesc.Height = mClientHeight;
+		sd.BufferDesc.RefreshRate.Numerator = 60;
+		sd.BufferDesc.RefreshRate.Denominator = 1;
+		sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+		sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+		// 4重採樣
+		if (mEnable4xMsaa)
+		{
+			sd.SampleDesc.Count = 4;
+			sd.SampleDesc.Quality = m4xMsaaQuality - 1;
+		}
+		else
+		{
+			sd.SampleDesc.Count = 1;
+			sd.SampleDesc.Quality = 0;
+		}
+		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		sd.BufferCount = 1;
+		sd.OutputWindow = mhMainWnd;
+		sd.Windowed = TRUE;
+		sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+		sd.Flags = 0;
+		HR(dxgiFactory1->CreateSwapChain(md3dDevice.Get(), &sd, mSwapChain.GetAddressOf()));
 	}
+	dxgiFactory1->MakeWindowAssociation(mhMainWnd, DXGI_MWA_NO_ALT_ENTER | DXGI_MWA_NO_WINDOW_CHANGES);
 
-    sd.BufferUsage  = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	sd.BufferCount  = 1;
-	sd.OutputWindow = mhMainWnd;
-	sd.Windowed     = true;
-	sd.SwapEffect   = DXGI_SWAP_EFFECT_DISCARD;
-	sd.Flags        = 0;
-
-    IDXGIDevice* dxgiDevice=0;
-    HR(md3dDevice->QueryInterface(__uuidof(IDXGIDevice) ,(void**)&dxgiDevice));
-    
-    IDXGIAdapter* dxgiAdapter = 0;
-	HR(dxgiDevice->GetParent(__uuidof(IDXGIAdapter), (void**)&dxgiAdapter));
-
-	IDXGIFactory* dxgiFactory = 0;
-	HR(dxgiAdapter->GetParent(__uuidof(IDXGIFactory), (void**)&dxgiFactory));
-
-    HR(dxgiFactory->CreateSwapChain(md3dDevice,&sd,&mSwapChain));
-
-    ReleaseCOM(dxgiDevice);
-    ReleaseCOM(dxgiAdapter);
-    ReleaseCOM(dxgiFactory);
-
-    OnResize();
-    return true;
+	this->OnResize();
+	return true;
 }
 void D3DApp::CalculateFrameStats()
 {

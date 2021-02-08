@@ -14,6 +14,13 @@
 #include <vector>
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include <d3dcompiler.h>
+#include <DirectXPackedVector.h>
+#include <DirectXCollision.h>
+
+#ifndef GRAPHICS_DEBUGGER_OBJECT_NAME
+#define GRAPHICS_DEBUGGER_OBJECT_NAME (1)
+#endif
 
 #if defined(DEBUG) | defined(_DEBUG)
 	#ifndef HR
@@ -41,7 +48,8 @@
 //-----
 //刪除物件
 //-----
-#define SafeDelete(x){delete x; x=nullptr;}
+//#define SafeDelete(x){delete x; x=nullptr;}
+
 
 
 HRESULT WINAPI DXTraceW(_In_z_ const WCHAR* strFile, _In_ DWORD dwLine, _In_ HRESULT hr,
