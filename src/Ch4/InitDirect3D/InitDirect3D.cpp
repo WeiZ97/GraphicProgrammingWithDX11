@@ -41,11 +41,11 @@ GameApp::~GameApp()
 }
 void GameApp::DrawScene()
 {
-    assert(md3dImmediateContext);
-	assert(mSwapChain);
-    md3dImmediateContext->ClearRenderTargetView(mRenderTargetView.Get(),Colors::Blue);
-    md3dImmediateContext->ClearDepthStencilView(mDepthStencilView.Get(),D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,1.0f,0);
-    HR(mSwapChain->Present(0, 0));
+    assert(mPtrD3dImmediateContext);
+	assert(mPtrSwapChain);
+    mPtrD3dImmediateContext->ClearRenderTargetView(mPtrRenderTargetView.Get(),Colors::Blue);
+    mPtrD3dImmediateContext->ClearDepthStencilView(mPtrDepthStencilView.Get(),D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,1.0f,0);
+    HR(mPtrSwapChain->Present(0, 0));
 }
 bool GameApp::Init()
 {
@@ -62,4 +62,15 @@ void GameApp::OnResize()
 void GameApp::UpdateScene(float dt)
 {
 
+}
+void GameApp::DrawScene()
+{
+	assert(mPtrD3dImmediateContext);
+	assert(mPtrSwapChain);
+
+	mPtrD3dImmediateContext->ClearRenderTargetView(mPtrRenderTargetView.Get(),(const float*)&Colors::Black);
+	mPtrD3dImmediateContext->ClearDepthStencilView(mPtrDepthStencilView.Get(),D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,1.0f,0);
+
+	
+	HR(mPtrSwapChain->Present(0,0));
 }

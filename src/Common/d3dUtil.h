@@ -46,14 +46,18 @@
 #define ReleaseCOM(x){if(x) {x->Release(); x=nullptr;} }
 
 //-----
-//刪除物件
+//
 //-----
-//#define SafeDelete(x){delete x; x=nullptr;}
+#define SAFE_RELEASE(p) { if ((p)) { (p)->Release(); (p) = nullptr; } }
 
 
 
 HRESULT WINAPI DXTraceW(_In_z_ const WCHAR* strFile, _In_ DWORD dwLine, _In_ HRESULT hr,
 	_In_opt_ const WCHAR* strMsg, _In_ bool bPopMsgBox);
+
+
+HRESULT CreateShaderFromFile(const WCHAR* csoFileNameInOut,const WCHAR* hlslFileName,LPCSTR entryPoint,LPCSTR shaderModel,ID3DBlob** PPBlobOut);
+
 
 using namespace DirectX;
 
