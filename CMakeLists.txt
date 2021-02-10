@@ -74,9 +74,12 @@ copy_file_post_build(DrawTriangle ${BINPATH}/Debug/hlsl ${HLSL_SOUCES})
 
 ####BoxDemo#####
  
-#file(GLOB BoxDemoSOURCES "${PROJECT_SOURCE_DIR}/src/Ch6/Box/*.cpp")
+file(GLOB BoxDemoSOURCES "${PROJECT_SOURCE_DIR}/src/Ch6/Box/*.cpp")
 
-#add_executable(BoxDemo ${BoxDemoSOURCES})
-#target_link_libraries(BoxDemo Common)
+add_executable(BoxDemo ${BoxDemoSOURCES})
+target_link_libraries(BoxDemo Common)
+msvc_dirtctory_fix(BoxDemo ${LIBPATH} ${BINPATH})
+
+copy_file_post_build(BoxDemo ${BINPATH}/Debug/hlsl ${HLSL_SOUCES})
 
 ################

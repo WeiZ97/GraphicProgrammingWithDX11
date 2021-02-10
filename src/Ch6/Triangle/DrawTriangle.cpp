@@ -33,7 +33,7 @@ private:
 
 const D3D11_INPUT_ELEMENT_DESC GameApp::VertexPosColor::inputLayout[2]={
     { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, sizeof(DirectX::XMFLOAT3), D3D11_INPUT_PER_VERTEX_DATA, 0 }
 };
 
 //main
@@ -96,7 +96,7 @@ void GameApp::DrawScene()
     mPtrD3dImmediateContext->ClearRenderTargetView(mPtrRenderTargetView.Get(),(const float*)&Colors::Black);
 	mPtrD3dImmediateContext->ClearDepthStencilView(mPtrDepthStencilView.Get(),D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,1.0f,0);
 
-	mPtrD3dImmediateContext->Draw(3,0);
+	mPtrD3dImmediateContext->Draw(4,0);
 	HR(mPtrSwapChain->Present(0,0));
 }
 
@@ -118,11 +118,14 @@ bool GameApp::InitEffect()
 }
 bool GameApp::InitResource()
 {
+
+    ///頂點緩衝創建
     VertexPosColor vertices[]=
     {
-        { DirectX::XMFLOAT3(0.0f, 0.5f, 0.5f), DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
-		{ DirectX::XMFLOAT3(0.5f, -0.5f, 0.5f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
-		{DirectX:: XMFLOAT3(-0.5f, -0.5f, 0.5f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) }
+        { XMFLOAT3(0.0f, 0.5f, 0.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
+        { XMFLOAT3(0.5f, 0.0f, 0.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
+        { XMFLOAT3(-0.5f, 0.0f, 0.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
+        { XMFLOAT3(0.0f, -0.5f, 0.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
        
     };
     D3D11_BUFFER_DESC vbd;
@@ -131,7 +134,7 @@ bool GameApp::InitResource()
     vbd.ByteWidth=sizeof(vertices);
     vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vbd.CPUAccessFlags = 0;
-
+    
     D3D11_SUBRESOURCE_DATA InitData;
     ZeroMemory(&InitData, sizeof(InitData));
 	InitData.pSysMem = vertices;
@@ -142,7 +145,7 @@ bool GameApp::InitResource()
 
     mPtrD3dImmediateContext->IASetVertexBuffers(0,1,mPtrVertexBuffer.GetAddressOf(),&stride,&offest);
 
-    mPtrD3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    mPtrD3dImmediateContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
     mPtrD3dImmediateContext->IASetInputLayout(mPtrVertexLayout.Get());
 
     mPtrD3dImmediateContext->VSSetShader(mPtrVertexShader.Get(),nullptr,0);
